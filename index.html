@@ -37,6 +37,9 @@
             <button onclick="randomizeSalary()">Random Salary</button>
             <button onclick="toggleView('paystub')" style="background: #8e44ad;">Paystub</button>
             <button onclick="toggleView('letter')" style="background: #c0392b;">Official Letter</button>
+            <button onclick="downloadJPG()">Download JPG</button>
+            <button onclick="downloadPDF()">Download PDF</button>
+
         </div>
         <input type="hidden" id="stRate" value="2.5">
     </div>
@@ -271,163 +274,9 @@
         </div>
     </div>
 
-    <script>
-        const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const dateFmt = (d) => d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-        function init() {
-            // Defaults
-            // Name is empty by default in HTML
-
-            // Generate Random ID
-            document.getElementById('empId').value = Math.floor(Math.random() * 899999) + 100000;
-
-            randomizeSalary();
-        }
-
-        function randomizeSalary() {
-            // Random Salary (Between 45k and 75k for Adjunct Faculty typically)
-            const minSal = 45000;
-            const maxSal = 75000;
-            let salary = Math.floor(Math.random() * (maxSal - minSal + 1)) + minSal;
-            salary = Math.round(salary / 100) * 100;
-            document.getElementById('salary').value = salary;
-
-            // Random Fed Tax (8% to 14%)
-            let fedTax = (Math.random() * (14 - 8) + 8).toFixed(1);
-            document.getElementById('fedRate').value = fedTax;
-
-            generate();
-        }
-
-        function toggleView(view) {
-            const paystub = document.getElementById('wrapper');
-            const letter = document.getElementById('letter-wrapper');
-
-            if (view === 'paystub') {
-                paystub.style.display = 'block';
-                letter.style.display = 'none';
-            } else {
-                paystub.style.display = 'none';
-                letter.style.display = 'block';
-            }
-        }
-
-        function generate() {
-            // Data Reading
-            const name = document.getElementById('name').value;
-            const title = document.getElementById('title').value;
-            const dept = document.getElementById('dept').value;
-            const empId = document.getElementById('empId').value;
-            const email = document.getElementById('email').value;
-            const gender = document.getElementById('gender').value;
-
-            // Dates Logic
-            const now = new Date();
-            const end = new Date(now);
-            const start = new Date(now);
-            start.setDate(end.getDate() - 14);
-
-            // YTD Calculation Logic
-            const startYear = new Date(now.getFullYear(), 0, 1);
-            const daysSinceJan1 = Math.ceil((now - startYear) / (1000 * 60 * 60 * 24));
-            // Ensure at least 1 period
-            const periods = Math.max(1, Math.ceil(daysSinceJan1 / 14));
-
-            // Set Header Info
-            document.getElementById('dName').innerText = name.toUpperCase();
-            document.getElementById('dId').innerText = empId;
-            document.getElementById('dDept').innerText = dept;
-            document.getElementById('dTitle').innerText = title;
-            document.getElementById('pStart').innerText = dateFmt(start);
-            document.getElementById('pEnd').innerText = dateFmt(end);
-            document.getElementById('chkDate').innerText = dateFmt(now);
-
-            // LETTER UPDATES
-            const nameParts = name.trim().split(' ');
-            const lastName = nameParts.length > 0 ? nameParts[nameParts.length - 1] : name;
-            const prefix = gender === 'Male' ? 'Mr.' : 'Ms.';
-            const salutation = `${prefix} ${lastName}`;
-            const pronoun = gender === 'Male' ? 'He' : 'She';
-
-            document.getElementById('lName').innerText = name;
-            document.getElementById('lNameSubject').innerText = name;
-            document.getElementById('lId').innerText = empId;
-            document.getElementById('lEmail').innerText = email;
-            document.getElementById('lLastName').innerText = salutation;
-            document.getElementById('lPronoun').innerText = pronoun;
-            document.getElementById('lTitle').innerText = title;
-            document.getElementById('letterDate').innerText = dateFmt(now);
-
-            // Random Advice/Acct Numbers
-            // We only generate these once or they flicker on typing. 
-            // Better to check if they exist or leave them be if they are random-seeded.
-            // Since this runs on every keypress, we shouldn't re-randomize static IDs like advice number unless we want to.
-            if (!document.getElementById('advNum').dataset.set) {
-                const rAdv = Math.floor(Math.random() * 89999999) + 10000000;
-                document.getElementById('advNum').innerText = rAdv;
-                document.getElementById('advNum').dataset.set = "true";
-            }
-
-            if (document.getElementById('acct4').innerText === '0000' || document.getElementById('acct4').innerText.length !== 4) {
-                document.getElementById('acct4').innerText = Math.floor(Math.random() * 8999) + 1000;
-            }
-
-            document.getElementById('runDate').innerText = "Run Date: " + dateFmt(now) + " " + now.toLocaleTimeString();
-
-            // Financial Calculations
-            const annual = parseFloat(document.getElementById('salary').value) || 0;
-            const fedRate = (parseFloat(document.getElementById('fedRate').value) || 0) / 100;
-            const stRate = (parseFloat(document.getElementById('stRate').value) || 0) / 100;
-
-            // 26 Pay Periods
-            const grossPeriod = annual / 26;
-            const hourlyRate = (annual / 2080); // approx 2080 working hours
-
-            const stipend = 250;
-            const grossTotal = grossPeriod + stipend;
-
-            // Earnings Updates
-            document.getElementById('hrRate').innerText = fmt(hourlyRate);
-            document.getElementById('payCur').innerText = fmt(grossPeriod);
-            document.getElementById('payYtd').innerText = fmt(grossPeriod * periods);
-            document.getElementById('stipYtd').innerText = fmt(stipend * periods);
-            document.getElementById('grossCur').innerText = fmt(grossTotal);
-            document.getElementById('grossYtd').innerText = fmt(grossTotal * periods);
-
-            // Taxes (Fed, State, SS 6.2%, Med 1.45%)
-            const fed = grossTotal * fedRate;
-            const st = grossTotal * stRate;
-            const ss = grossTotal * 0.062;
-            const med = grossTotal * 0.0145;
-            const taxTotal = fed + st + ss + med;
-
-            document.getElementById('fedCur').innerText = fmt(fed); document.getElementById('fedYtd').innerText = fmt(fed * periods);
-            document.getElementById('stCur').innerText = fmt(st); document.getElementById('stYtd').innerText = fmt(st * periods);
-            document.getElementById('ssCur').innerText = fmt(ss); document.getElementById('ssYtd').innerText = fmt(ss * periods);
-            document.getElementById('medCur').innerText = fmt(med); document.getElementById('medYtd').innerText = fmt(med * periods);
-            document.getElementById('taxCur').innerText = fmt(taxTotal); document.getElementById('taxYtd').innerText = fmt(taxTotal * periods);
-
-            // Deductions
-            const asrs = grossTotal * 0.1217;
-            const ins = 85.50;
-            const den = 12.00;
-            const dedTotal = asrs + ins + den;
-
-            document.getElementById('retCur').innerText = fmt(asrs); document.getElementById('retYtd').innerText = fmt(asrs * periods);
-            document.getElementById('insYtd').innerText = fmt(ins * periods);
-            document.getElementById('denYtd').innerText = fmt(den * periods);
-            document.getElementById('dedCur').innerText = fmt(dedTotal); document.getElementById('dedYtd').innerText = fmt(dedTotal * periods);
-
-            // Net
-            const net = grossTotal - taxTotal - dedTotal;
-            document.getElementById('netPay').innerText = "$" + fmt(net);
-        }
-
-        // Init
-        init();
-    </script>
+    <script src="script.js"></script>
 </body>
-
-
 </html>
