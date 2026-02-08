@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCCCD Pay Advice and Offical Letter Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap');
+
+        body {
+            background-color: #333;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Controls */
+        .controls {
+            background: #222;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            font-family: sans-serif;
+            z-index: 1000;
+            flex-wrap: wrap;
+            border: 1px solid #444;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .input-group label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #aaa;
+        }
+
+        input {
+            padding: 8px;
+            border-radius: 3px;
+            border: 1px solid #555;
+            font-size: 14px;
+            background: #444;
+            color: white;
+            width: 160px;
+        }
+
+        button {
+            background: #0078d4;
+            color: white;
+            border: none;
+            padding: 9px 18px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #005a9e;
+        }
+
+        .scan-btn {
+            background: #e67e22;
+        }
+
+        .scan-btn:hover {
+            background: #d35400;
+        }
+
+        .rand-btn {
+            background: #27ae60;
+        }
+
+        .rand-btn:hover {
+            background: #219150;
+        }
+
+        /* The Paper */
+        .page-container {
+            position: relative;
+            background-color: white;
+            width: 8.5in;
+            height: 11in;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid #dcdcdc;
+            transition: transform 0.3s;
+        }
+
+        .page-content {
+            padding: 0.5in;
+            height: 100%;
+            box-sizing: border-box;
+            color: #000;
+        }
+
+        /* Scan Mode FX */
+        .scan-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+            z-index: 100;
+        }
+
+        .scan-mode .page-container {
+            filter: contrast(1.2) brightness(0.97) blur(0.4px);
+            transform: rotate(-0.3deg);
+        }
+
+        .scan-mode .scan-overlay {
+            display: block;
+        }
+
+        .scan-mode .page-content {
+            color: #1a1a1a;
+        }
+
+        /* Layout */
+        .row {
+            display: flex;
+            width: 100%;
+            gap: 20px;
+            margin-bottom: 12px;
+        }
+
+        .col {
+            flex: 1;
+        }
+
+        /* Header Design */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+
+        .logo-section {
+            display: flex;
+            flex-direction: column;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .logo-section img {
+            height: 65px;
+            object-fit: contain;
+            object-position: left bottom;
+            margin-bottom: 2px;
+            /* Clip the baked-in border from the image file */
+            clip-path: inset(2px);
+            transform: scale(1.02);
+            /* Slight scale to compensate for clip */
+        }
+
+        .org-name {
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 5px;
+            padding-left: 2px;
+        }
+
+        .doc-meta {
+            text-align: right;
+        }
+
+        .doc-title {
+            font-size: 22px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .doc-subtitle {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        /* Tables & Grids */
+        .panel {
+            border: 1px solid #888;
+            margin-bottom: 12px;
+        }
+
+        .panel-header {
+            background-color: #eee;
+            padding: 4px 8px;
+            font-weight: bold;
+            border-bottom: 1px solid #888;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-body {
+            padding: 6px 8px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 3px 15px;
+            font-size: 10px;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            border-bottom: 1px solid #000;
+            text-align: left;
+            padding: 3px 6px;
+            font-weight: bold;
+        }
+
+        td {
+            border-bottom: 1px solid #ddd;
+            padding: 3px 6px;
+        }
+
+        .num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .total-row td {
+            border-top: 1px solid #000;
+            background-color: #f9f9f9;
+            font-weight: bold;
+        }
+
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 0.4in;
+            left: 0.5in;
+            right: 0.5in;
+            border-top: 1px solid #ccc;
+            padding-top: 5px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 7px;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .controls {
+                display: none;
+            }
+
+            .page-container {
+                box-shadow: none;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                transform: none !important;
+                border: none;
+            }
+        }
+
+        .signature-box {
+            position: absolute;
+            bottom: 200px;
+            right: 570px;
+            text-align: center;
+            width: 250px;
+        }
+
+        .signature-box img {
+            height: 100px;
+        }
+
+        .letter-content {
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #000;
+            padding: 40px;
+        }
+
+        .letter-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="controls">
+        <div class="input-group"><label>Employee Name</label><input type="text" id="name" value=""
+                placeholder="Enter Name" oninput="generate()"></div>
+        <div class="input-group"><label>Email</label><input type="text" id="email" value="" placeholder="Email"
+                oninput="generate()"></div>
+        <div class="input-group"><label>Employee ID</label><input type="text" id="empId" value="" placeholder="ID"
+                oninput="generate()"></div>
+        <div class="input-group"><label>Title</label><input type="text" id="title" value="Adjunct Faculty"
+                oninput="generate()"></div>
+        <div class="input-group"><label>Dept</label><input type="text" id="dept" value="Education" oninput="generate()">
+        </div>
+        <div class="input-group"><label>Annual Salary</label><input type="number" id="salary" value="0"
+                oninput="generate()"></div>
+        <div class="input-group"><label>Fed Tax %</label><input type="number" id="fedRate" value="0" step="0.1"
+                style="width: 70px;" oninput="generate()"></div>
+        <div class="input-group">
+            <label>Gender</label>
+            <select id="gender"
+                style="padding: 8px; border-radius: 3px; border: 1px solid #555; background: #444; color: white;"
+                onchange="generate()">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+        </div>
+        <div style="margin-left: 10px; margin-bottom: 4px; display: flex; gap: 10px;">
+            <button onclick="randomizeSalary()">Random Salary</button>
+            <button onclick="toggleView('paystub')" style="background: #8e44ad;">Paystub</button>
+            <button onclick="toggleView('letter')" style="background: #c0392b;">Official Letter</button>
+        </div>
+        <input type="hidden" id="stRate" value="2.5">
+    </div>
+
+    <div id="wrapper" class="page-container">
+        <div class="scan-overlay"></div>
+        <div class="page-content">
+            <div class="header"
+                style="flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                <div class="logo-section" style="align-items: center;">
+                    <img src="Logo.png" alt="MCCCD" style="height: 150px;">
+                </div>
+                <div class="doc-meta" style="text-align: center; margin-top: 10px; width: 100%;">
+                    <div class="doc-title">PAY ADVICE</div>
+                    <div class="doc-subtitle">Direct Deposit Advice</div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col panel">
+                    <div class="panel-header">Employee Information</div>
+                    <div class="panel-body info-grid">
+                        <div class="label">Employee Name:</div>
+                        <div id="dName">RICHARD D. STEVENSON</div>
+                        <div class="label">Employee ID:</div>
+                        <div id="dId">000000</div>
+                        <div class="label">Department:</div>
+                        <div id="dDept">Education</div>
+                        <div class="label">Job Title:</div>
+                        <div id="dTitle">Adjunct Faculty</div>
+                        <div class="label">Status:</div>
+                        <div>Active - Full Time</div>
+                    </div>
+                </div>
+                <div class="col panel">
+                    <div class="panel-header">Pay Period</div>
+                    <div class="panel-body info-grid">
+                        <div class="label">Pay Period Begin:</div>
+                        <div id="pStart">01/01/2026</div>
+                        <div class="label">Pay Period End:</div>
+                        <div id="pEnd">01/15/2026</div>
+                        <div class="label">Advice Date:</div>
+                        <div id="chkDate">01/18/2026</div>
+                        <div class="label">Advice Number:</div>
+                        <div id="advNum">12345678</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">Earnings</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:40%;">Description</th>
+                            <th class="num">Rate</th>
+                            <th class="num">Current Hours</th>
+                            <th class="num">Current Amount</th>
+                            <th class="num">YTD Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Regular Pay</td>
+                            <td class="num" id="hrRate">-</td>
+                            <td class="num">80.00</td>
+                            <td class="num" id="payCur">0.00</td>
+                            <td class="num" id="payYtd">0.00</td>
+                        </tr>
+                        <tr>
+                            <td>Operational Stipend</td>
+                            <td class="num">-</td>
+                            <td class="num">-</td>
+                            <td class="num">250.00</td>
+                            <td class="num" id="stipYtd">0.00</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3">Total Gross Pay</td>
+                            <td class="num" id="grossCur">0.00</td>
+                            <td class="num" id="grossYtd">0.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row">
+                <div class="col panel">
+                    <div class="panel-header">Taxes</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th class="num">Current</th>
+                                <th class="num">YTD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Federal Withholding</td>
+                                <td class="num" id="fedCur">0.00</td>
+                                <td class="num" id="fedYtd">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>State Withholding (AZ)</td>
+                                <td class="num" id="stCur">0.00</td>
+                                <td class="num" id="stYtd">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Social Security</td>
+                                <td class="num" id="ssCur">0.00</td>
+                                <td class="num" id="ssYtd">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Medicare</td>
+                                <td class="num" id="medCur">0.00</td>
+                                <td class="num" id="medYtd">0.00</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td>Total Taxes</td>
+                                <td class="num" id="taxCur">0.00</td>
+                                <td class="num" id="taxYtd">0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col panel">
+                    <div class="panel-header">Deductions</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th class="num">Current</th>
+                                <th class="num">YTD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>ASRS Retirement</td>
+                                <td class="num" id="retCur">0.00</td>
+                                <td class="num" id="retYtd">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Health Insurance (PPO)</td>
+                                <td class="num">85.50</td>
+                                <td class="num" id="insYtd">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Dental Insurance</td>
+                                <td class="num">12.00</td>
+                                <td class="num" id="denYtd">0.00</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td>Total Deductions</td>
+                                <td class="num" id="dedCur">0.00</td>
+                                <td class="num" id="dedYtd">0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">Net Pay Distribution</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px;">
+                    <div style="font-size: 11px;">
+                        <strong>Bank Name:</strong> Chase Bank<br>
+                        <strong>Account Number:</strong> ****<span id="acct4">0000</span><br>
+                        <strong>Account Type:</strong> Checking
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 10px; text-transform: uppercase; color: #666; margin-bottom: 2px;">Net
+                            Pay</div>
+                        <div style="font-size: 20px; font-weight: bold;" id="netPay">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="signature-box">
+                <img src="Signature.png" alt="Signature">
+            </div>
+
+            <div class="footer">
+                <span>Oracle HCM Cloud | Generated Report</span>
+                <span id="runDate"></span>
+                <span>Page 1 of 1</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Official Letter Page -->
+    <div id="letter-wrapper" class="page-container" style="display:none;">
+        <div class="scan-overlay"></div>
+        <div class="page-content letter-content">
+            <div class="letter-header">
+                <img src="Logo.png" style="height: 130px;">
+                <div style="border-bottom: 1px solid #999; width: 100%; margin: 15px 0;"></div>
+                <p style="margin: 5px 0; font-size: 11pt; color: #000; font-family: 'Times New Roman', serif;">2411 W
+                    14th St,
+                    Tempe, AZ 85281</p>
+            </div>
+
+            <div style="text-align: left; margin-bottom: 20px;">
+                <span id="letterDate">January 06, 2026</span>
+            </div>
+
+            <p style="margin-bottom: 20px; font-weight: bold;">Subject: Employment Verification for <span
+                    id="lNameSubject">Mary
+                    Howell</span></p>
+
+            <p>To Whom It May Concern,</p>
+
+            <p>This letter serves to verify that <span id="lName">Mary Howell</span> is currently employed with Maricopa
+                Community Colleges as a <span id="lTitle">Teacher</span>.<br>
+                Employee ID: <span id="lId">MAR3087706</span><br>
+                Email: <span id="lEmail">MAR3087706@maricopa.edu</span>
+            </p>
+
+            <p><span id="lLastName">Ms. Howell</span> is an active faculty member for the 2025-2026 academic year. <span
+                    id="lPronoun">She</span> is in
+                good standing with the institution.
+            </p>
+
+            <p>If you require any further information, please do not hesitate to contact our Human Resources department.
+            </p>
+
+            <p style="margin-top: 40px;">Sincerely,</p>
+
+            <div style="margin-top: 20px; margin-left: -10px;">
+                <img src="Signature.png" style="height: 100px;">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const dateFmt = (d) => d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+
+        function init() {
+            // Defaults
+            // Name is empty by default in HTML
+
+            // Generate Random ID
+            document.getElementById('empId').value = Math.floor(Math.random() * 899999) + 100000;
+
+            randomizeSalary();
+        }
+
+        function randomizeSalary() {
+            // Random Salary (Between 45k and 75k for Adjunct Faculty typically)
+            const minSal = 45000;
+            const maxSal = 75000;
+            let salary = Math.floor(Math.random() * (maxSal - minSal + 1)) + minSal;
+            salary = Math.round(salary / 100) * 100;
+            document.getElementById('salary').value = salary;
+
+            // Random Fed Tax (8% to 14%)
+            let fedTax = (Math.random() * (14 - 8) + 8).toFixed(1);
+            document.getElementById('fedRate').value = fedTax;
+
+            generate();
+        }
+
+        function toggleView(view) {
+            const paystub = document.getElementById('wrapper');
+            const letter = document.getElementById('letter-wrapper');
+
+            if (view === 'paystub') {
+                paystub.style.display = 'block';
+                letter.style.display = 'none';
+            } else {
+                paystub.style.display = 'none';
+                letter.style.display = 'block';
+            }
+        }
+
+        function generate() {
+            // Data Reading
+            const name = document.getElementById('name').value;
+            const title = document.getElementById('title').value;
+            const dept = document.getElementById('dept').value;
+            const empId = document.getElementById('empId').value;
+            const email = document.getElementById('email').value;
+            const gender = document.getElementById('gender').value;
+
+            // Dates Logic
+            const now = new Date();
+            const end = new Date(now);
+            const start = new Date(now);
+            start.setDate(end.getDate() - 14);
+
+            // YTD Calculation Logic
+            const startYear = new Date(now.getFullYear(), 0, 1);
+            const daysSinceJan1 = Math.ceil((now - startYear) / (1000 * 60 * 60 * 24));
+            // Ensure at least 1 period
+            const periods = Math.max(1, Math.ceil(daysSinceJan1 / 14));
+
+            // Set Header Info
+            document.getElementById('dName').innerText = name.toUpperCase();
+            document.getElementById('dId').innerText = empId;
+            document.getElementById('dDept').innerText = dept;
+            document.getElementById('dTitle').innerText = title;
+            document.getElementById('pStart').innerText = dateFmt(start);
+            document.getElementById('pEnd').innerText = dateFmt(end);
+            document.getElementById('chkDate').innerText = dateFmt(now);
+
+            // LETTER UPDATES
+            const nameParts = name.trim().split(' ');
+            const lastName = nameParts.length > 0 ? nameParts[nameParts.length - 1] : name;
+            const prefix = gender === 'Male' ? 'Mr.' : 'Ms.';
+            const salutation = `${prefix} ${lastName}`;
+            const pronoun = gender === 'Male' ? 'He' : 'She';
+
+            document.getElementById('lName').innerText = name;
+            document.getElementById('lNameSubject').innerText = name;
+            document.getElementById('lId').innerText = empId;
+            document.getElementById('lEmail').innerText = email;
+            document.getElementById('lLastName').innerText = salutation;
+            document.getElementById('lPronoun').innerText = pronoun;
+            document.getElementById('lTitle').innerText = title;
+            document.getElementById('letterDate').innerText = dateFmt(now);
+
+            // Random Advice/Acct Numbers
+            // We only generate these once or they flicker on typing. 
+            // Better to check if they exist or leave them be if they are random-seeded.
+            // Since this runs on every keypress, we shouldn't re-randomize static IDs like advice number unless we want to.
+            if (!document.getElementById('advNum').dataset.set) {
+                const rAdv = Math.floor(Math.random() * 89999999) + 10000000;
+                document.getElementById('advNum').innerText = rAdv;
+                document.getElementById('advNum').dataset.set = "true";
+            }
+
+            if (document.getElementById('acct4').innerText === '0000' || document.getElementById('acct4').innerText.length !== 4) {
+                document.getElementById('acct4').innerText = Math.floor(Math.random() * 8999) + 1000;
+            }
+
+            document.getElementById('runDate').innerText = "Run Date: " + dateFmt(now) + " " + now.toLocaleTimeString();
+
+            // Financial Calculations
+            const annual = parseFloat(document.getElementById('salary').value) || 0;
+            const fedRate = (parseFloat(document.getElementById('fedRate').value) || 0) / 100;
+            const stRate = (parseFloat(document.getElementById('stRate').value) || 0) / 100;
+
+            // 26 Pay Periods
+            const grossPeriod = annual / 26;
+            const hourlyRate = (annual / 2080); // approx 2080 working hours
+
+            const stipend = 250;
+            const grossTotal = grossPeriod + stipend;
+
+            // Earnings Updates
+            document.getElementById('hrRate').innerText = fmt(hourlyRate);
+            document.getElementById('payCur').innerText = fmt(grossPeriod);
+            document.getElementById('payYtd').innerText = fmt(grossPeriod * periods);
+            document.getElementById('stipYtd').innerText = fmt(stipend * periods);
+            document.getElementById('grossCur').innerText = fmt(grossTotal);
+            document.getElementById('grossYtd').innerText = fmt(grossTotal * periods);
+
+            // Taxes (Fed, State, SS 6.2%, Med 1.45%)
+            const fed = grossTotal * fedRate;
+            const st = grossTotal * stRate;
+            const ss = grossTotal * 0.062;
+            const med = grossTotal * 0.0145;
+            const taxTotal = fed + st + ss + med;
+
+            document.getElementById('fedCur').innerText = fmt(fed); document.getElementById('fedYtd').innerText = fmt(fed * periods);
+            document.getElementById('stCur').innerText = fmt(st); document.getElementById('stYtd').innerText = fmt(st * periods);
+            document.getElementById('ssCur').innerText = fmt(ss); document.getElementById('ssYtd').innerText = fmt(ss * periods);
+            document.getElementById('medCur').innerText = fmt(med); document.getElementById('medYtd').innerText = fmt(med * periods);
+            document.getElementById('taxCur').innerText = fmt(taxTotal); document.getElementById('taxYtd').innerText = fmt(taxTotal * periods);
+
+            // Deductions
+            const asrs = grossTotal * 0.1217;
+            const ins = 85.50;
+            const den = 12.00;
+            const dedTotal = asrs + ins + den;
+
+            document.getElementById('retCur').innerText = fmt(asrs); document.getElementById('retYtd').innerText = fmt(asrs * periods);
+            document.getElementById('insYtd').innerText = fmt(ins * periods);
+            document.getElementById('denYtd').innerText = fmt(den * periods);
+            document.getElementById('dedCur').innerText = fmt(dedTotal); document.getElementById('dedYtd').innerText = fmt(dedTotal * periods);
+
+            // Net
+            const net = grossTotal - taxTotal - dedTotal;
+            document.getElementById('netPay').innerText = "$" + fmt(net);
+        }
+
+        // Init
+        init();
+    </script>
+</body>
+
+
+</html>
